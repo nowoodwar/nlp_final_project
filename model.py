@@ -9,22 +9,21 @@ class BertBase(nn.Module):
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         self.start = nn.Linear(embedding_size, max_seq_len)
         self.end = nn.Linear(embedding_size, max_seq_len)
+        self.dropout = nn.Dropout(0.25)
         
     def forward(self, input_ids, segment_ids, mask):
         # Give 3 input id lists to BERT, ignore output[0], containing losses
-        _, bert_out = self.bert(input_ids, token_type_ids=segment_ids, attention_mask=mask)
-        
+        _, output = self.bert(input_ids, token_type_ids=segment_ids, attention_mask=mask)
+        bert_out = self.dropout(output)
         # Apply (start, end) weights to BERT output
         start_logits = self.start(bert_out)
         end_logits = self.end(bert_out)
         
-        # nn.BCEWithLogitsLoss applies normalization for me
-        '''
         # Apply softmax to get prob distribution of start and end indices
-        start_logits = self.softmax(start_out)
-        end_logits = self.softmax(end_out)
-        '''
-        return start_logits, end_logits
+        start = torch.sigmoid(start_logits)
+        end = torch.sigmoid(end_logits)
+        
+        return start, end
 
 class BertDataset():
     def __init__(self, q_list, context_list, a_list, context_map, tokenizer, max_len):
@@ -85,9 +84,9 @@ class BertDataset():
             mask += pad
         
         return {
-            "input_ids": torch.tensor([input_ids], dtype=torch.long),
-            "segment_ids": torch.tensor([segment_ids], dtype=torch.long),
-            "mask": torch.tensor([mask], dtype=torch.long),
+            "input_ids": torch.tensor(input_ids, dtype=torch.long),
+            "segment_ids": torch.tensor(segment_ids, dtype=torch.long),
+            "mask": torch.tensor(mask, dtype=torch.long),
             "start_targets": torch.tensor(start_targets, dtype=torch.long),
             "end_targets": torch.tensor(end_targets, dtype=torch.long)
         }

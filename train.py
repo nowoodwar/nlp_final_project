@@ -29,9 +29,10 @@ def main():
     answer_list = data["answer_list"]
     
     training_set = BertDataset(question_list, context_list, answer_list, context_map, tokenizer, MAX_LEN)
-    # data_loader = torch.utils.data.DataLoader(training_set, batch_size=BATCH_SIZE, shuffle=True)
+    data_loader = torch.utils.data.DataLoader(training_set, batch_size=BATCH_SIZE, shuffle=True)
     
     model = BertBase('bert-base-uncased', 768, MAX_LEN).to(DEVICE)
+    
     optimizer = AdamW(model.parameters(), lr=LR)
     scheduler = get_linear_schedule_with_warmup(
         optimizer, 
@@ -40,7 +41,7 @@ def main():
     )
 
     for _ in range(EPOCHS):
-        training_loop(training_set, model, optimizer, DEVICE, scheduler)
+        training_loop(data_loader, model, optimizer, DEVICE, scheduler)
     
     # Save trained model
     torch.save(model, 'saves/fine_tuned_model_main')
@@ -53,21 +54,22 @@ def main():
     answer_list = data["answer_list"]
     
     test_set = BertDataset(question_list, context_list, answer_list, context_map, tokenizer, MAX_LEN)
+    data_loader = torch.utils.data.DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=True)
     
-    em, f1 = eval_loop(test_set, model, DEVICE)
-    print('\n'+'*'*10+'\nExact Score: '+str(em)+'\nF1 Score: '+str(f1)+'*'*10+'\n')
+    em, f1 = eval_loop(data_loader, model, DEVICE)
+    print('\n'+'*'*10+'\nExact Score: '+str(em)+'\nF1 Score: '+str(f1)+'\n'+'*'*10+'\n')
 
 
-def training_loop(dataset, model, optimizer, device, scheduler=None):
+def training_loop(data_loader, model, optimizer, device, scheduler=None):
     model.train()
     
-    for i, data in enumerate(dataset):
+    for i, data in enumerate(data_loader):
         input_ids = data['input_ids']
         segment_ids = data['segment_ids']
         mask = data['mask']
         start = data['start_targets']
-        end = data['end_targets']
-        
+        end = data['end_targets']    
+ 
         # one-hot for targets
         start_target = torch.zeros(1, MAX_LEN)
         end_target = torch.zeros(1, MAX_LEN)
@@ -88,7 +90,7 @@ def training_loop(dataset, model, optimizer, device, scheduler=None):
         start_logit, end_logit = model(input_ids=input_ids, mask=mask, segment_ids=segment_ids)
         
         # calculate loss and back propogate
-        loss = nn.BCEWithLogitsLoss()(start_logit, start_target)*0.5 + nn.BCEWithLogitsLoss()(end_logit, end_target)*0.5
+        loss = nn.BCELoss()(start_logit, start_target)*0.5 + nn.BCELoss()(end_logit, end_target)*0.5
         loss.backward()
         optimizer.step()
         
@@ -100,16 +102,16 @@ def training_loop(dataset, model, optimizer, device, scheduler=None):
     print('*'*10+'\nEpoch Complete\n'+'*'*10)
 
 
-def eval_loop(dataset, model, device):
+def eval_loop(data_loader, model, device):
     model.eval()
     
     exact_scores, f1_scores = [], []
-    for i, data in enumerate(dataset):        
+    for _, data in enumerate(data_loader):      
         input_ids = data['input_ids']
         segment_ids = data['segment_ids']
         mask = data['mask']
-        start_targets = data['start_targets']
-        end_targets = data['end_targets']
+        start_targets = data['start_targets'][0]
+        end_targets = data['end_targets'][0]
         
         # torch to GPU
         input_ids = input_ids.to(device)
@@ -126,12 +128,13 @@ def eval_loop(dataset, model, device):
             start_pred, end_pred = end_pred, start_pred
  
         # calculate best exact and f1 score for prediction among viable answers
-        best_exact, best_f1 = 0., 0.
+        best_exact = 0
+        best_f1 = 0.
         for i in range(len(start_targets)):
             answer_span = range(int(start_targets[i]), int(end_targets[i]) + 1)
             pred_span = range(int(start_pred), int(end_pred) + 1)
             if pred_span is answer_span:
-                best_exact = 1.
+                best_exact = 1
             
             f1 = f1_score(pred_span, answer_span)
             if f1 > best_f1:
