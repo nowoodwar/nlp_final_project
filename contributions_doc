@@ -1,0 +1,20 @@
+Nathaniel Woodward
+NLP Final Project
+
+Resources/Libraries Used:
+- I used PyTorch for my implementation
+
+- I used a pre-trained bert-base-uncased model to build my QA model around and fine-tune
+https://huggingface.co/transformers/pretrained_models.html
+
+- I used the SQuAD0-v1.1 datasets, both train and dev sets
+https://rajpurkar.github.io/SQuAD-explorer/
+
+- I referenced code from a TPU inference kernel on kaggle to understand how to use tokenizer.encode_plus()
+https://www.kaggle.com/abhishek/bert-inference-of-tpu-model/
+
+My code before encode_plus shown in my presentation, exchanged my 25 lines + code with one encode_plus function I learned
+from looking at the one kernel
+
+Everything else was done myself from scratch. I wanted to learn the conceptual pieces of the problem and BERT architecture
+and then implement it on my own instead of relying too much on other pieces. All of the code in my files I wrote.

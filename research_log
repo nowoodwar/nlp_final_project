@@ -1,0 +1,123 @@
+General Intro: BERT
+
+October 2018 came out of google and achieved very impressive results in NLP tasks, some even surpassing human ability
+
+Transfer Learning
+	BERT is huge and expensive to train -> leverage pre-training and fine tune additional layers around BERT
+
+What makes BERT powerful?
+	A major limitation of NLP is access to training data. BERT is pretrained on two tasks - masked word prediction
+	and next sentence prediction. Because any human text (wikipedia, etc..) can be used for this, we can train
+	BERT on massive amounts of human-written text and have the model understand human language better.
+
+
+	Then, we can strip the output layer and use the core of BERT - the pre-trained transformers of human language
+	as the core of many NLP tasks such as Q/A with the addition of new input/output layers and fine tuning.
+
+	This allows extremely high accuracy on a much smaller subset of Q/A (or any other task's) data -> it allows the fine tuning of the
+	model to focus on the task at hand, and not understanding human language itself. (Transfer Learning again)
+
+
+
+
+*******************************************************************************************************************
+
+Attention is All You Need: The Transformer Architecture
+
+Seq2Seq tasks have been traditionally been tackled through RNNs & LSTMs
+	LSTMs
+		Word Embeddings -> (Encoder) -> Hidden States
+			RNN piece is the hidden state of previous word being used in next works encoder
+			Last hidden state feeds into decoder to produce the output words
+			
+Attention is intended to improve the results of RNNs
+	Previously the only information to predict the next translated word is the previously predicted 
+	word and the resulting hidden state being fed into the decoder
+	
+	The problem with this architecture is that it has trouble learning long-range dependencies
+		For example in a 3 word sentence, h0, h1, h2 is encoded and h2 is fed into the decoder, 
+		for the model to predict the third word you only have the hidden state h3 the predicted
+		translated second word. The ability for the the hidden states to retain the relevent information
+		over increasingly many transformations becomes very difficult.
+
+	Can't you match tokens 1 to 1 and use initial word piece embeddings to predict the translated word in conjuction with this information?
+		Can't match 1 to 1 tokens because of ordering and general differences in languages.
+
+Attention is a mechanism that allows the decoder to look at pieces of the input without matching 1 to 1 tokens
+	Computationally better - selects from the hidden states of the input sentence, scraps recurrence
+		- Actually reduces path lengths and computation steps in forwarding through the network -> quicker training
+		- Shorter path lengths also means less information is lost across transformations in the network
+			A lot of the improvements in transformers are attributed to these shorter path lengths
+	
+	How does the decoder decide which hidden states to look at and weigh appropriately?
+		Decoders output keys that index the hidden states of the inputs (kinda like a softmax of weights)
+			Therefore, the weighting of hidden states as input of the decoder is trained!
+			
+	This idea of attention means that we don't need the Recurrent part of the RNN -> we just train attention!
+		Train how to weight the input hidden states for each decoder instead of using previous hidden state
+	
+Attention Mechanism in depth (https://cdn.analyticsvidhya.com/wp-content/uploads/2019/06/Screenshot-from-2019-06-17-19-53-10.png)
+	There is attention in three places
+		(Multi-head attention adds linear weighting of values, keys for indexing and queries before dot-product attention)
+		1. Multi-head attention on input embeddings
+		2. Masked multi-head attention on the predicted outputs (so far, hence the masked)
+		3. Multi-head attention on a combination of the previous two. Weighting input vs. predicted output
+	This produces one final softmax of weighted attention of hidden states (input + predicted output embeddings) to be used in the decoder
+
+	
+	
+	
+*********************************************************************************************************************
+
+BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+
+
+
+
+*********************************************************************************************************************
+
+ALBERT vs. BERT: Tradeoffs
+
+
+
+
+*********************************************************************************************************************
+
+Q/A System: Implementing BERT and Fine-Tuning steps for Q/A Model
+
+
+
+
+*********************************************************************************************************************
+
+Research Paper Presentation: Parameter-Efficient Transfer Learning for NLP
+
+
+Problem:
+	What are the authors trying to address/solve?
+		
+	What are the contributions?
+
+Model/Approach:
+	What does the solution look like?
+	
+	Technical Details:
+	
+	Figures/Formulas:
+	
+Evaluation/Results:
+	What datasets do they use? Give examples of data
+	
+	What baselines do they compare their results to?
+
+My Takeaways:
+	Does it work?
+	
+	Are there any problems with this solution?
+	
+	What, if anything, is left unresolved?
+	
+	
+
+********************************************************************************************************************
+
